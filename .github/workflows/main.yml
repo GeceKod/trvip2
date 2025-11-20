@@ -20,12 +20,12 @@ jobs:
         with:
           python-version: '3.10'
 
-      # DEĞİŞİKLİK 1: Gerekli kütüphaneler kuruluyor (artık playwright kullanıyoruz)
+      # Gerekli kütüphaneler kuruluyor
       - name: Install Python dependencies
         run: |
           pip install playwright
 
-      # DEĞİŞİKLİK 2: Playwright'ın kontrol edeceği Chromium tarayıcısı kuruluyor
+      # Playwright'ın kontrol edeceği Chromium tarayıcısı kuruluyor
       - name: Install Playwright browsers
         run: |
           playwright install chromium
@@ -33,14 +33,41 @@ jobs:
       - name: Run selcuk.py
         run: python selcuk.py
 
-      - name: Commit and Push changes
+      # --- GÜNCELLENMİŞ ADIM: Harici depoya manuel push ---
+      - name: Commit and Push kanallar.m3u8 to target repository
         run: |
-          git config --global user.name "GitHub Actions"
+          # 1. Hedef depo URL'sini PAT ile yapılandır
+          TARGET_REPO_URL="https://GeceKod:${{ secrets.TARGET_REPO_TOKEN }}@github.com/GeceKod/listeler.git"
+          TARGET_DIR="target_repo"
+          # selcuk.py dosyasının da kanallar.m3u8 oluşturduğu varsayılmıştır
+          FILE_NAME="kanallar2.m3u8"
+
+          # 2. Git yapılandırması
           git config --global user.email "actions@github.com"
-          git add .
+          git config --global user.name "GitHub Actions (M3U8 Pusher)"
+          
+          # 3. Hedef depoyu klonla
+          echo "Hedef depo klonlanıyor..."
+          git clone --depth 1 $TARGET_REPO_URL $TARGET_DIR
+          
+          # 4. Klonlanan depoya geç
+          cd $TARGET_DIR
+          
+          # 5. Yeni dosyayı klonlanan depoya kopyala
+          echo "Yeni dosya kopyalanıyor..."
+          cp ../$FILE_NAME .
+          
+          # 6. Değişiklikleri yap
+          git add $FILE_NAME
+          
+          # 7. Eğer değişiklik varsa commit et
           if git diff --staged --quiet; then
-            echo "No changes to commit"
+            echo "Hedef depoda değişiklik yok, commit atlanıyor."
           else
-            git commit -m "Auto-update m3u8 files"
+            git commit -m "Auto-update $FILE_NAME"
+            
+            # 8. Değişiklikleri hedef depoya push et
+            echo "Değişiklikler push ediliyor..."
             git push
+            echo "Push işlemi tamamlandı."
           fi
