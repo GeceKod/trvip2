@@ -146,7 +146,7 @@ def extract_m3u8_from_page(page, player_url):
 # --- GÜNCELLENEN MAIN FONKSİYONU ---
 def main():
     with sync_playwright() as p:
-        print("🚀 Playwright ile Selçuk Sports M3U8 Kanal İndirici Başlatılıyor...")
+        print("🚀 Playwright ile Selçuk M3U8 Kanal İndirici Başlatılıyor...")
         
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
@@ -161,7 +161,7 @@ def main():
             browser.close()
             sys.exit(1)
 
-        channels = scrape_channel_links(page, selcuksports_domain)
+        channels = scrape_channel_links(page, selcuk_domain)
 
         if not channels:
             print("❌ UYARI: Hiçbir kanal bulunamadı, işlem sonlandırılıyor.")
@@ -169,7 +169,7 @@ def main():
             sys.exit(1)
         
         m3u_content = []
-        output_filename = "selcuksports_kanallar.m3u8"
+        output_filename = "kanallar2.m3u8"
         print(f"\n📺 {len(channels)} kanal için M3U8 linkleri işleniyor...")
         created = 0
         
