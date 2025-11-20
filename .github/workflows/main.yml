@@ -34,12 +34,12 @@ jobs:
         run: python selcuk.py
 
       # --- GÜNCELLENMİŞ ADIM: Harici depoya manuel push ---
-      - name: Commit and Push kanallar.m3u8 to target repository
+      - name: Commit and Push kanallar2.m3u8 to target repository
         run: |
           # 1. Hedef depo URL'sini PAT ile yapılandır
           TARGET_REPO_URL="https://GeceKod:${{ secrets.TARGET_REPO_TOKEN }}@github.com/GeceKod/listeler.git"
           TARGET_DIR="target_repo"
-          # selcuk.py dosyasının da kanallar.m3u8 oluşturduğu varsayılmıştır
+          # selcuk.py'deki yeni çıktı dosyası adı
           FILE_NAME="kanallar2.m3u8"
 
           # 2. Git yapılandırması
