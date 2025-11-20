@@ -154,6 +154,7 @@ def main():
         )
         page = context.new_page()
 
+        # Hata Düzeltme: Değişken adı tutarlılığı sağlandı.
         selcuksports_domain = find_working_domain(page)
 
         if not selcuksports_domain:
@@ -161,7 +162,8 @@ def main():
             browser.close()
             sys.exit(1)
 
-        channels = scrape_channel_links(page, selcuk_domain)
+        # Hata Düzeltme: selcuksports_domain kullanıldı.
+        channels = scrape_channel_links(page, selcuksports_domain)
 
         if not channels:
             print("❌ UYARI: Hiçbir kanal bulunamadı, işlem sonlandırılıyor.")
@@ -169,6 +171,7 @@ def main():
             sys.exit(1)
         
         m3u_content = []
+        # Dosya adı kanallar2.m3u8 olarak ayarlandı.
         output_filename = "kanallar2.m3u8"
         print(f"\n📺 {len(channels)} kanal için M3U8 linkleri işleniyor...")
         created = 0
