@@ -118,30 +118,75 @@ def scrape_channel_links(page, domain_to_scrape):
 
 def extract_m3u8_from_page(page, player_url):
     """
-    Oynatıcı sayfasından M3U8 linkini doğrudan oluşturur.
+    Oynatıcı sayfasından M3U8 linkini ağ isteklerini (network requests) dinleyerek 
+    veya sayfa kaynağından asıl değişkeni bularak oluşturur.
     """
+    m3u8_url = None
+
+    # Ağ isteklerini dinleyen fonksiyon
+    def handle_request(request):
+        nonlocal m3u8_url
+        if ".m3u8" in request.url and not m3u8_url:
+            m3u8_url = request.url
+
     try:
+        # İsteği dinlemeye başla
+        page.on("request", handle_request)
         page.goto(player_url, timeout=20000, wait_until="domcontentloaded")
+        
+        # Oynatıcının m3u8 isteğini yapması için kısa bir süre bekle
+        try:
+            page.wait_for_timeout(1500)
+        except:
+            pass
+            
+        page.remove_listener("request", handle_request)
+
+        # Eğer arka planda çağırılan asıl m3u8 bulunduysa doğrudan onu döndür
+        if m3u8_url:
+            return m3u8_url
+
+        # AĞ İSTEĞİ YAKALANAMAZSA: Sayfa kaynağından gerçek ID'yi bul
         content = page.content()
+        
+        # 1. İhtimal: Sayfa içinde doğrudan playlist linki varsa
+        m3u8_match = re.search(r"(https?://[^\s'\"<>]+playlist\.m3u8[^\s'\"<>]*)", content)
+        if m3u8_match:
+            return m3u8_match.group(1)
+
+        # 2. İhtimal: baseStreamUrl ve asıl yayın (stream) değişkeni
         base_url_match = re.search(r"this\.baseStreamUrl\s*=\s*['\"](https?://.*?)['\"]", content)
         if not base_url_match:
             print(" -> ❌ 'baseStreamUrl' bulunamadı.", end="")
             return None
+            
         base_url = base_url_match.group(1)
         
-        parsed_url = urlparse(player_url)
-        query_params = parse_qs(parsed_url.query)
-        stream_id = query_params.get('id', [None])[0]
+        # Sayfa içerisindeki muhtemel GERÇEK yayın değişkenlerini ara (örn: streamName="selcukobs1")
+        stream_id_match = re.search(r"(?:streamName|streamId|channelId|play_id|id)\s*[:=]\s*['\"]([^'\"]+)['\"]", content)
+        
+        if stream_id_match:
+            stream_id = stream_id_match.group(1)
+        else:
+            # Tüm çabalar başarısız olursa, en son ihtimal URL'deki id parametresini al
+            parsed_url = urlparse(player_url)
+            query_params = parse_qs(parsed_url.query)
+            stream_id = query_params.get('id', [None])[0]
+
         if not stream_id:
-            print(" -> ❌ 'id' parametresi bulunamadı.", end="")
+            print(" -> ❌ Kanal ID'si bulunamadı.", end="")
             return None
 
-        m3u8_link = f"{base_url}{stream_id}/playlist.m3u8"
-        return m3u8_link
+        return f"{base_url}{stream_id}/playlist.m3u8"
 
     except Exception:
         print(" -> ❌ Sayfa yüklenirken hata oluştu.", end="")
         return None
+    finally:
+        try:
+            page.remove_listener("request", handle_request)
+        except:
+            pass
 
 # --- GÜNCELLENEN MAIN FONKSİYONU ---
 def main():
